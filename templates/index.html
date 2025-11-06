@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>番茄鐘</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>番茄鐘</h1>
+        <div id="timer-display">
+            <p id="state">{{ current_state }}</p>
+            <p id="time">{{ time_left // 60 }}:{{ time_left % 60 | format('02d') }}</p>
+        </div>
+        <button id="start-btn">開始</button>
+        <button id="stop-btn">停止</button>
+    </div>
+
+    <script>
+        document.getElementById("start-btn").addEventListener("click", function() {
+            fetch("/start_timer", { method: "POST" })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === "timer_started") {
+                        startTimer();
+                    }
+                });
+        });
+
+        document.getElementById("stop-btn").addEventListener("click", function() {
+            fetch("/stop_timer", { method: "POST" })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === "timer_stopped") {
+                        stopTimer();
+                    }
+                });
+        });
+
+        let timeLeft = { time_left };
+        let currentState = "{{ current_state }}";
+        let timerInterval;
+
+        function startTimer() {
+            timerInterval = setInterval(function() {
+                timeLeft--;
+                if (timeLeft <= 0) {
+                    currentState = (currentState === "工作中") ? "休息中" : "工作中";
+                    timeLeft = (currentState === "工作中") ? 25 * 60 : 5 * 60;
+                }
+                updateDisplay();
+            }, 1000);
+        }
+
+        function stopTimer() {
+            clearInterval(timerInterval);
+        }
+
+        function updateDisplay() {
+            document.getElementById("state").textContent = currentState;
+            document.getElementById("time").textContent = `${Math.floor(timeLeft / 60)}:${String(timeLeft % 60).padStart(2, '0')}`;
+        }
+    </script>
+</body>
+</html>
